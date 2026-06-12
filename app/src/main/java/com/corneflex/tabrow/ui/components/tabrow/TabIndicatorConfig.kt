@@ -3,9 +3,16 @@ package com.corneflex.tabrow.ui.components.tabrow
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 enum class IndicatorPlacement {
@@ -108,6 +115,26 @@ sealed class TabIndicatorStyle(
         val height: Dp = 36.dp,
         val shape: Shape = RoundedCornerShape(999.dp),
     ) : TabIndicatorStyle(color, border, placement, horizontalPadding)
+
+    data class SideRoundedBorder(
+        override val color: Color = Color.Transparent,
+        override val border: BorderStroke = BorderStroke(1.dp, Color.Black),
+        override val placement: IndicatorPlacement = IndicatorPlacement.BehindContent,
+        override val horizontalPadding: Dp = 12.dp,
+        val height: Dp = 36.dp,
+        val shape: Shape = SideRoundedShape,
+    ) : TabIndicatorStyle(color, border, placement, horizontalPadding)
+
+    data class TopBottomBorder(
+        val lineColor: Color = Color.Black,
+        val lineWidth: Dp = 1.dp,
+        override val color: Color = Color.Transparent,
+        override val border: BorderStroke? = null,
+        override val placement: IndicatorPlacement = IndicatorPlacement.BehindContent,
+        override val horizontalPadding: Dp = 12.dp,
+        val height: Dp = 36.dp,
+        val shape: Shape = RectangleShape,
+    ) : TabIndicatorStyle(color, border, placement, horizontalPadding)
 }
 
 internal val TabIndicatorStyle.height: Dp
@@ -118,7 +145,45 @@ internal val TabIndicatorStyle.height: Dp
         is TabIndicatorStyle.Dash -> height
         is TabIndicatorStyle.Dot -> size
         is TabIndicatorStyle.Border -> height
+        is TabIndicatorStyle.SideRoundedBorder -> height
+        is TabIndicatorStyle.TopBottomBorder -> height
     }
+
+object SideRoundedShape : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density,
+    ): Outline {
+        if (size.width <= 0f || size.height <= 0f) {
+            return Outline.Rectangle(Rect(0f, 0f, size.width, size.height))
+        }
+
+        val radius = minOf(size.height / 2f, size.width / 2f)
+        val top = (size.height - radius * 2f) / 2f
+        val bottom = top + radius * 2f
+        val path = Path().apply {
+            moveTo(radius, top)
+            lineTo(size.width - radius, top)
+            arcTo(
+                rect = Rect(size.width - radius * 2f, top, size.width, bottom),
+                startAngleDegrees = -90f,
+                sweepAngleDegrees = 180f,
+                forceMoveTo = false,
+            )
+            lineTo(radius, bottom)
+            arcTo(
+                rect = Rect(0f, top, radius * 2f, bottom),
+                startAngleDegrees = 90f,
+                sweepAngleDegrees = 180f,
+                forceMoveTo = false,
+            )
+            close()
+        }
+
+        return Outline.Generic(path)
+    }
+}
 
 internal val TabIndicatorStyle.shape: Shape
     get() = when (this) {
@@ -128,4 +193,6 @@ internal val TabIndicatorStyle.shape: Shape
         is TabIndicatorStyle.Dash -> shape
         is TabIndicatorStyle.Dot -> CircleShape
         is TabIndicatorStyle.Border -> shape
+        is TabIndicatorStyle.SideRoundedBorder -> shape
+        is TabIndicatorStyle.TopBottomBorder -> shape
     }
