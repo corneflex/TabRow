@@ -2,7 +2,7 @@
 
 A fully customisable scrollable tab row for Jetpack Compose, driven by a `PagerState`.
 
-![TabRow playground screenshot](docs/screenshot.png)
+![TabRow playground demo](docs/demo.gif)
 
 ---
 
