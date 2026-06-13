@@ -40,6 +40,9 @@ CustomScrollableTabRow(
     tabStyle = TabStyle.default(
         selectedContentColor = Color.Black,
         unselectedContentColor = Color.Gray,
+    ).copy(
+        selectedTextStyle = MaterialTheme.typography.titleMedium,
+        unselectedTextStyle = MaterialTheme.typography.labelLarge,
     ),
 )
 ```

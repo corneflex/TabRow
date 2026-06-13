@@ -1,4 +1,4 @@
-package com.corneflex.tabrow.ui.components.tabrow
+package com.corneflex.tabrow.ui.components.tabrow.model
 
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector

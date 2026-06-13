@@ -1,4 +1,4 @@
-package com.corneflex.tabrow.ui.components.tabrow
+package com.corneflex.tabrow.ui.components.tabrow.config
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -19,14 +19,12 @@ sealed interface IndicatorMotion {
 sealed class TabRowMotion(
     internal val indicatorMotion: IndicatorMotion,
     internal val colorSpec: FiniteAnimationSpec<Float>,
-    internal val contentSpec: FiniteAnimationSpec<Float>,
     internal val sizeSpec: FiniteAnimationSpec<IntSize>,
     internal val scrollSpec: FiniteAnimationSpec<Float>,
 ) {
     data object None : TabRowMotion(
         indicatorMotion = IndicatorMotion.None,
         colorSpec = TweenSpec(durationMillis = 0),
-        contentSpec = TweenSpec(durationMillis = 0),
         sizeSpec = TweenSpec(durationMillis = 0),
         scrollSpec = TweenSpec(durationMillis = 0),
     )
@@ -34,7 +32,6 @@ sealed class TabRowMotion(
     data object Smooth : TabRowMotion(
         indicatorMotion = IndicatorMotion.Slide,
         colorSpec = tween(durationMillis = 180),
-        contentSpec = tween(durationMillis = 160),
         sizeSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
         scrollSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
     )
@@ -45,7 +42,6 @@ sealed class TabRowMotion(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessHigh,
         ),
-        contentSpec = tween(durationMillis = 100),
         sizeSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing),
         scrollSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
     )
@@ -56,7 +52,6 @@ sealed class TabRowMotion(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium,
         ),
-        contentSpec = tween(durationMillis = 180),
         sizeSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMedium,
@@ -67,13 +62,11 @@ sealed class TabRowMotion(
     data class Custom(
         val motion: IndicatorMotion = IndicatorMotion.Slide,
         val colorAnimationSpec: FiniteAnimationSpec<Float> = tween(180),
-        val contentAnimationSpec: FiniteAnimationSpec<Float> = tween(160),
         val sizeAnimationSpec: FiniteAnimationSpec<IntSize> = tween(220, easing = FastOutSlowInEasing),
         val scrollAnimationSpec: FiniteAnimationSpec<Float> = tween(260, easing = FastOutSlowInEasing),
     ) : TabRowMotion(
         indicatorMotion = motion,
         colorSpec = colorAnimationSpec,
-        contentSpec = contentAnimationSpec,
         sizeSpec = sizeAnimationSpec,
         scrollSpec = scrollAnimationSpec,
     )

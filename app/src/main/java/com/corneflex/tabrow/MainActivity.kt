@@ -43,17 +43,20 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.corneflex.tabrow.ui.components.tabrow.CustomScrollableTabRow
-import com.corneflex.tabrow.ui.components.tabrow.IndicatorMotion
-import com.corneflex.tabrow.ui.components.tabrow.IndicatorPlacement
-import com.corneflex.tabrow.ui.components.tabrow.TabContentConfig
-import com.corneflex.tabrow.ui.components.tabrow.TabContentStyle
-import com.corneflex.tabrow.ui.components.tabrow.TabContentSwapPolicy
-import com.corneflex.tabrow.ui.components.tabrow.TabContentTransition
-import com.corneflex.tabrow.ui.components.tabrow.TabIndicatorConfig
-import com.corneflex.tabrow.ui.components.tabrow.TabIndicatorStyle
-import com.corneflex.tabrow.ui.components.tabrow.TabItem
-import com.corneflex.tabrow.ui.components.tabrow.TabRowMotion
-import com.corneflex.tabrow.ui.components.tabrow.TabStyle
+import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorMotion
+import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorPlacement
+import com.corneflex.tabrow.ui.components.tabrow.config.TabContentConfig
+import com.corneflex.tabrow.ui.components.tabrow.config.TabContentOptions
+import com.corneflex.tabrow.ui.components.tabrow.config.TabContentStyle
+import com.corneflex.tabrow.ui.components.tabrow.config.TabContentSwapPolicy
+import com.corneflex.tabrow.ui.components.tabrow.config.TabContentTransition
+import com.corneflex.tabrow.ui.components.tabrow.config.TabIndicatorConfig
+import com.corneflex.tabrow.ui.components.tabrow.config.TabIndicatorStyle
+import com.corneflex.tabrow.ui.components.tabrow.config.TabRowMotion
+import com.corneflex.tabrow.ui.components.tabrow.defaults.TabDefaults
+import com.corneflex.tabrow.ui.components.tabrow.model.TabColors
+import com.corneflex.tabrow.ui.components.tabrow.model.TabItem
+import com.corneflex.tabrow.ui.components.tabrow.model.TabStyle
 import com.corneflex.tabrow.ui.theme.TabRowTheme
 
 class MainActivity : ComponentActivity() {
@@ -63,9 +66,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             TabRowTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    TabRowDemo(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    TabRowDemo(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -114,6 +115,7 @@ fun TabRowDemo(modifier: Modifier = Modifier) {
     }
 
     val palette = theme.palette()
+
     val indicator = remember(indicatorKind, indicatorMotion, indicatorPadding, placement, palette) {
         TabIndicatorConfig(
             style = indicatorKind.style(
@@ -125,20 +127,21 @@ fun TabRowDemo(modifier: Modifier = Modifier) {
             motion = indicatorMotion,
         )
     }
-    val tabStyle = remember(tabLook, tabGap, indicatorKind, placement, palette) {
+
+    val tabColors = remember(tabLook, indicatorKind, placement, palette) {
         val selectedContentColor = if (
-            placement == IndicatorPlacement.BehindContent &&
-            indicatorKind.hasFilledBackground
-        ) {
-            palette.onAccent
-        } else {
-            palette.accent
-        }
-        tabLook.style(
-            palette = palette,
-            selectedContentColor = selectedContentColor,
+            placement == IndicatorPlacement.BehindContent && indicatorKind.hasFilledBackground
+        ) palette.onAccent else palette.accent
+        tabLook.colors(palette, selectedContentColor)
+    }
+
+    val labelSmall = MaterialTheme.typography.labelSmall
+    val tabStyle = remember(tabGap, labelSmall) {
+        TabDefaults.style(
+            selectedTextStyle = labelSmall,
+            unselectedTextStyle = labelSmall,
+            horizontalPadding = tabGap.tabHorizontalPadding,
             itemSpacing = tabGap.spacing,
-            tabHorizontalPadding = tabGap.tabHorizontalPadding,
         )
     }
 
@@ -157,10 +160,13 @@ fun TabRowDemo(modifier: Modifier = Modifier) {
             pagerState = pagerState,
             palette = palette,
             content = transitionPreview.resolve(contentMode),
-            contentTransition = contentTransition.transition,
-            contentSwapPolicy = contentSwapPolicy.policy,
+            contentOptions = TabContentOptions(
+                transition = contentTransition.transition,
+                swapPolicy = contentSwapPolicy.policy,
+            ),
             indicator = indicator,
             rowMotion = rowMotion,
+            tabColors = tabColors,
             tabStyle = tabStyle,
             preset = previewPreset,
         )
@@ -184,49 +190,19 @@ fun TabRowDemo(modifier: Modifier = Modifier) {
             palette = palette,
         ) {
             SettingsSection(title = "Theme", palette = palette) {
-                ChoiceRow(
-                    items = DemoTheme.entries,
-                    selected = theme,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { theme = it },
-                )
+                ChoiceRow(DemoTheme.entries, theme, { it.label }, palette) { theme = it }
             }
             SettingsSection(title = "Mode", palette = palette) {
-                ChoiceRow(
-                    items = DemoContentMode.entries,
-                    selected = contentMode,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { contentMode = it },
-                )
+                ChoiceRow(DemoContentMode.entries, contentMode, { it.label }, palette) { contentMode = it }
             }
             SettingsSection(title = "Preview", palette = palette) {
-                ChoiceRow(
-                    items = DemoTransitionPreview.entries,
-                    selected = transitionPreview,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { transitionPreview = it },
-                )
+                ChoiceRow(DemoTransitionPreview.entries, transitionPreview, { it.label }, palette) { transitionPreview = it }
             }
             SettingsSection(title = "Content animation", palette = palette) {
-                ChoiceRow(
-                    items = DemoContentTransition.entries,
-                    selected = contentTransition,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { contentTransition = it },
-                )
+                ChoiceRow(DemoContentTransition.entries, contentTransition, { it.label }, palette) { contentTransition = it }
             }
             SettingsSection(title = "Swap policy", palette = palette) {
-                ChoiceRow(
-                    items = DemoContentSwapPolicy.entries,
-                    selected = contentSwapPolicy,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { contentSwapPolicy = it },
-                )
+                ChoiceRow(DemoContentSwapPolicy.entries, contentSwapPolicy, { it.label }, palette) { contentSwapPolicy = it }
             }
         }
 
@@ -236,13 +212,7 @@ fun TabRowDemo(modifier: Modifier = Modifier) {
             palette = palette,
         ) {
             SettingsSection(title = "Shape", palette = palette) {
-                ChoiceRow(
-                    items = DemoIndicatorKind.entries,
-                    selected = indicatorKind,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { indicatorKind = it },
-                )
+                ChoiceRow(DemoIndicatorKind.entries, indicatorKind, { it.label }, palette) { indicatorKind = it }
             }
             SettingsSection(title = "Motion", palette = palette) {
                 ChoiceRow(
@@ -250,26 +220,13 @@ fun TabRowDemo(modifier: Modifier = Modifier) {
                     selected = DemoIndicatorMotionOption.from(indicatorMotion),
                     label = { it.label },
                     palette = palette,
-                    onSelected = { indicatorMotion = it.motion },
-                )
+                ) { indicatorMotion = it.motion }
             }
             SettingsSection(title = "Padding", palette = palette) {
-                ChoiceRow(
-                    items = DemoIndicatorPadding.entries,
-                    selected = indicatorPadding,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { indicatorPadding = it },
-                )
+                ChoiceRow(DemoIndicatorPadding.entries, indicatorPadding, { it.label }, palette) { indicatorPadding = it }
             }
             SettingsSection(title = "Placement", palette = palette) {
-                ChoiceRow(
-                    items = IndicatorPlacement.entries,
-                    selected = placement,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { placement = it },
-                )
+                ChoiceRow(IndicatorPlacement.entries, placement, { it.label }, palette) { placement = it }
             }
         }
 
@@ -284,26 +241,13 @@ fun TabRowDemo(modifier: Modifier = Modifier) {
                     selected = DemoRowMotionOption.from(rowMotion),
                     label = { it.label },
                     palette = palette,
-                    onSelected = { rowMotion = it.motion },
-                )
+                ) { rowMotion = it.motion }
             }
             SettingsSection(title = "Tab style", palette = palette) {
-                ChoiceRow(
-                    items = DemoTabLook.entries,
-                    selected = tabLook,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { tabLook = it },
-                )
+                ChoiceRow(DemoTabLook.entries, tabLook, { it.label }, palette) { tabLook = it }
             }
             SettingsSection(title = "Tab gap", palette = palette) {
-                ChoiceRow(
-                    items = DemoTabGap.entries,
-                    selected = tabGap,
-                    label = { it.label },
-                    palette = palette,
-                    onSelected = { tabGap = it },
-                )
+                ChoiceRow(DemoTabGap.entries, tabGap, { it.label }, palette) { tabGap = it }
             }
         }
     }
@@ -334,10 +278,10 @@ private fun PreviewPanel(
     pagerState: androidx.compose.foundation.pager.PagerState,
     palette: DemoPalette,
     content: TabContentConfig,
-    contentTransition: TabContentTransition,
-    contentSwapPolicy: TabContentSwapPolicy,
+    contentOptions: TabContentOptions,
     indicator: TabIndicatorConfig,
     rowMotion: TabRowMotion,
+    tabColors: TabColors,
     tabStyle: TabStyle,
     preset: DemoPreviewPreset,
 ) {
@@ -359,16 +303,8 @@ private fun PreviewPanel(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Text(
-                    text = preset.label,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = palette.content,
-                )
-                Text(
-                    text = preset.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = palette.muted,
-                )
+                Text(preset.label, style = MaterialTheme.typography.titleMedium, color = palette.content)
+                Text(preset.description, style = MaterialTheme.typography.bodySmall, color = palette.muted)
             }
             SignalDot(color = palette.accent)
         }
@@ -377,11 +313,11 @@ private fun PreviewPanel(
             tabs = tabs,
             pagerState = pagerState,
             content = content,
-            contentTransition = contentTransition,
-            contentSwapPolicy = contentSwapPolicy,
+            contentOptions = contentOptions,
             indicator = indicator,
             motion = rowMotion,
-            tabStyle = tabStyle,
+            colors = tabColors,
+            style = tabStyle,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -394,10 +330,7 @@ private fun PreviewPanel(
                 .background(palette.background)
                 .height(188.dp),
         ) { page ->
-            PagerPage(
-                title = tabs[page].text.orEmpty(),
-                color = palette.pageColors[page],
-            )
+            PagerPage(title = tabs[page].text.orEmpty(), color = palette.pageColors[page])
         }
     }
 }
@@ -427,16 +360,8 @@ private fun SettingsGroup(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = palette.content,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.muted,
-            )
+            Text(title, style = MaterialTheme.typography.titleMedium, color = palette.content)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = palette.muted)
         }
         content()
     }
@@ -448,14 +373,8 @@ private fun SettingsSection(
     palette: DemoPalette,
     content: @Composable () -> Unit,
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = palette.muted,
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(title, style = MaterialTheme.typography.labelLarge, color = palette.muted)
         content()
     }
 }
@@ -468,18 +387,11 @@ private fun PresetChoiceRow(
     onSelected: (DemoPreviewPreset) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         presets.forEach { preset ->
-            PresetChip(
-                preset = preset,
-                selected = preset == selected,
-                palette = palette,
-                onClick = { onSelected(preset) },
-            )
+            PresetChip(preset = preset, selected = preset == selected, palette = palette) { onSelected(preset) }
         }
     }
 }
@@ -499,7 +411,6 @@ private fun PresetChip(
         targetValue = if (selected) palette.accent else palette.border,
         label = "Preset border",
     )
-
     Column(
         modifier = Modifier
             .widthIn(min = 150.dp, max = 190.dp)
@@ -510,16 +421,8 @@ private fun PresetChip(
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = preset.label,
-            color = palette.content,
-            style = MaterialTheme.typography.labelLarge,
-        )
-        Text(
-            text = preset.description,
-            color = palette.muted,
-            style = MaterialTheme.typography.bodySmall,
-        )
+        Text(preset.label, color = palette.content, style = MaterialTheme.typography.labelLarge)
+        Text(preset.description, color = palette.muted, style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -532,18 +435,11 @@ private fun <T> ChoiceRow(
     onSelected: (T) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items.forEach { item ->
-            ChoiceChip(
-                text = label(item),
-                selected = item == selected,
-                palette = palette,
-                onClick = { onSelected(item) },
-            )
+            ChoiceChip(text = label(item), selected = item == selected, palette = palette) { onSelected(item) }
         }
     }
 }
@@ -567,7 +463,6 @@ private fun ChoiceChip(
         targetValue = if (selected) palette.accent else palette.border,
         label = "Chip border",
     )
-
     Text(
         text = text,
         modifier = Modifier
@@ -581,11 +476,10 @@ private fun ChoiceChip(
     )
 }
 
+// ─── Demo enums and data ──────────────────────────────────────────────────────
+
 private enum class DemoTheme(val label: String) {
-    Brand("Brand"),
-    Ocean("Ocean"),
-    Rose("Rose"),
-    Mono("Mono"),
+    Brand("Brand"), Ocean("Ocean"), Rose("Rose"), Mono("Mono"),
 }
 
 private enum class DemoPreviewPreset(
@@ -605,148 +499,85 @@ private enum class DemoPreviewPreset(
     val indicatorPadding: DemoIndicatorPadding,
 ) {
     Modern(
-        label = "Modern",
-        description = "Filled pill with balanced content.",
-        theme = DemoTheme.Brand,
-        contentMode = DemoContentMode.IconText,
-        contentTransition = DemoContentTransition.FadeScale,
-        contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
-        transitionPreview = DemoTransitionPreview.CurrentMode,
-        indicatorKind = DemoIndicatorKind.Pill,
-        indicatorMotion = IndicatorMotion.Slide,
-        rowMotion = TabRowMotion.Smooth,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.Tight,
-        placement = IndicatorPlacement.BehindContent,
-        indicatorPadding = DemoIndicatorPadding.Medium,
+        label = "Modern", description = "Filled pill with balanced content.",
+        theme = DemoTheme.Brand, contentMode = DemoContentMode.IconText,
+        contentTransition = DemoContentTransition.FadeScale, contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
+        transitionPreview = DemoTransitionPreview.CurrentMode, indicatorKind = DemoIndicatorKind.Pill,
+        indicatorMotion = IndicatorMotion.Slide, rowMotion = TabRowMotion.Smooth,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.Tight,
+        placement = IndicatorPlacement.BehindContent, indicatorPadding = DemoIndicatorPadding.Medium,
     ),
     Minimal(
-        label = "Minimal",
-        description = "Text tabs with a quiet underline.",
-        theme = DemoTheme.Mono,
-        contentMode = DemoContentMode.Text,
-        contentTransition = DemoContentTransition.Fade,
-        contentSwapPolicy = DemoContentSwapPolicy.Together,
-        transitionPreview = DemoTransitionPreview.CurrentMode,
-        indicatorKind = DemoIndicatorKind.Underline,
-        indicatorMotion = IndicatorMotion.Slide,
-        rowMotion = TabRowMotion.Smooth,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.Small,
-        placement = IndicatorPlacement.Bottom,
-        indicatorPadding = DemoIndicatorPadding.Medium,
+        label = "Minimal", description = "Text tabs with a quiet underline.",
+        theme = DemoTheme.Mono, contentMode = DemoContentMode.Text,
+        contentTransition = DemoContentTransition.Fade, contentSwapPolicy = DemoContentSwapPolicy.Together,
+        transitionPreview = DemoTransitionPreview.CurrentMode, indicatorKind = DemoIndicatorKind.Underline,
+        indicatorMotion = IndicatorMotion.Slide, rowMotion = TabRowMotion.Smooth,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.Small,
+        placement = IndicatorPlacement.Bottom, indicatorPadding = DemoIndicatorPadding.Medium,
     ),
     Playful(
-        label = "Playful",
-        description = "Text morphs into icons with snake motion.",
-        theme = DemoTheme.Rose,
-        contentMode = DemoContentMode.SelectedIcon,
-        contentTransition = DemoContentTransition.ExpandFade,
-        contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
-        transitionPreview = DemoTransitionPreview.TextToIcon,
-        indicatorKind = DemoIndicatorKind.Pill,
-        indicatorMotion = IndicatorMotion.Snake,
-        rowMotion = TabRowMotion.Playful,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.Tight,
-        placement = IndicatorPlacement.BehindContent,
-        indicatorPadding = DemoIndicatorPadding.Small,
+        label = "Playful", description = "Text morphs into icons with snake motion.",
+        theme = DemoTheme.Rose, contentMode = DemoContentMode.SelectedIcon,
+        contentTransition = DemoContentTransition.ExpandFade, contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
+        transitionPreview = DemoTransitionPreview.TextToIcon, indicatorKind = DemoIndicatorKind.Pill,
+        indicatorMotion = IndicatorMotion.Snake, rowMotion = TabRowMotion.Playful,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.Tight,
+        placement = IndicatorPlacement.BehindContent, indicatorPadding = DemoIndicatorPadding.Small,
     ),
     Compact(
-        label = "Compact",
-        description = "Icon-only tabs with a bouncing dot.",
-        theme = DemoTheme.Ocean,
-        contentMode = DemoContentMode.Icon,
-        contentTransition = DemoContentTransition.FadeScale,
-        contentSwapPolicy = DemoContentSwapPolicy.Together,
-        transitionPreview = DemoTransitionPreview.CurrentMode,
-        indicatorKind = DemoIndicatorKind.Dot,
-        indicatorMotion = IndicatorMotion.Bounce,
-        rowMotion = TabRowMotion.Snappy,
-        tabLook = DemoTabLook.Outlined,
-        tabGap = DemoTabGap.None,
-        placement = IndicatorPlacement.Bottom,
-        indicatorPadding = DemoIndicatorPadding.None,
+        label = "Compact", description = "Icon-only tabs with a bouncing dot.",
+        theme = DemoTheme.Ocean, contentMode = DemoContentMode.Icon,
+        contentTransition = DemoContentTransition.FadeScale, contentSwapPolicy = DemoContentSwapPolicy.Together,
+        transitionPreview = DemoTransitionPreview.CurrentMode, indicatorKind = DemoIndicatorKind.Dot,
+        indicatorMotion = IndicatorMotion.Bounce, rowMotion = TabRowMotion.Snappy,
+        tabLook = DemoTabLook.Outlined, tabGap = DemoTabGap.None,
+        placement = IndicatorPlacement.Bottom, indicatorPadding = DemoIndicatorPadding.None,
     ),
     Outline(
-        label = "Outline",
-        description = "Outlined selection with icon transitions.",
-        theme = DemoTheme.Brand,
-        contentMode = DemoContentMode.IconText,
-        contentTransition = DemoContentTransition.SlideLeft,
-        contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
-        transitionPreview = DemoTransitionPreview.IconTextToIcon,
-        indicatorKind = DemoIndicatorKind.Border,
-        indicatorMotion = IndicatorMotion.Fade,
-        rowMotion = TabRowMotion.Smooth,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.Small,
-        placement = IndicatorPlacement.BehindContent,
-        indicatorPadding = DemoIndicatorPadding.Small,
+        label = "Outline", description = "Outlined selection with icon transitions.",
+        theme = DemoTheme.Brand, contentMode = DemoContentMode.IconText,
+        contentTransition = DemoContentTransition.SlideLeft, contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
+        transitionPreview = DemoTransitionPreview.IconTextToIcon, indicatorKind = DemoIndicatorKind.Border,
+        indicatorMotion = IndicatorMotion.Fade, rowMotion = TabRowMotion.Smooth,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.Small,
+        placement = IndicatorPlacement.BehindContent, indicatorPadding = DemoIndicatorPadding.Small,
     ),
     SideBorder(
-        label = "Side border",
-        description = "Flat top and bottom with rounded sides.",
-        theme = DemoTheme.Brand,
-        contentMode = DemoContentMode.SelectedIcon,
-        contentTransition = DemoContentTransition.FadeScale,
-        contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
-        transitionPreview = DemoTransitionPreview.TextToIcon,
-        indicatorKind = DemoIndicatorKind.SideRoundedBorder,
-        indicatorMotion = IndicatorMotion.Slide,
-        rowMotion = TabRowMotion.Smooth,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.Tight,
-        placement = IndicatorPlacement.BehindContent,
-        indicatorPadding = DemoIndicatorPadding.Small,
+        label = "Side border", description = "Flat top and bottom with rounded sides.",
+        theme = DemoTheme.Brand, contentMode = DemoContentMode.SelectedIcon,
+        contentTransition = DemoContentTransition.FadeScale, contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
+        transitionPreview = DemoTransitionPreview.TextToIcon, indicatorKind = DemoIndicatorKind.SideRoundedBorder,
+        indicatorMotion = IndicatorMotion.Slide, rowMotion = TabRowMotion.Smooth,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.Tight,
+        placement = IndicatorPlacement.BehindContent, indicatorPadding = DemoIndicatorPadding.Small,
     ),
     DualRail(
-        label = "Dual rail",
-        description = "Top and bottom rails around selected content.",
-        theme = DemoTheme.Mono,
-        contentMode = DemoContentMode.Text,
-        contentTransition = DemoContentTransition.FadeThrough,
-        contentSwapPolicy = DemoContentSwapPolicy.Together,
-        transitionPreview = DemoTransitionPreview.CurrentMode,
-        indicatorKind = DemoIndicatorKind.TopBottomBorder,
-        indicatorMotion = IndicatorMotion.Fade,
-        rowMotion = TabRowMotion.Snappy,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.Small,
-        placement = IndicatorPlacement.BehindContent,
-        indicatorPadding = DemoIndicatorPadding.Medium,
+        label = "Dual rail", description = "Top and bottom rails around selected content.",
+        theme = DemoTheme.Mono, contentMode = DemoContentMode.Text,
+        contentTransition = DemoContentTransition.FadeThrough, contentSwapPolicy = DemoContentSwapPolicy.Together,
+        transitionPreview = DemoTransitionPreview.CurrentMode, indicatorKind = DemoIndicatorKind.TopBottomBorder,
+        indicatorMotion = IndicatorMotion.Fade, rowMotion = TabRowMotion.Snappy,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.Small,
+        placement = IndicatorPlacement.BehindContent, indicatorPadding = DemoIndicatorPadding.Medium,
     ),
     Segmented(
-        label = "Segmented",
-        description = "Filled tabs with a rectangular indicator.",
-        theme = DemoTheme.Ocean,
-        contentMode = DemoContentMode.IconText,
-        contentTransition = DemoContentTransition.SlideRight,
-        contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
-        transitionPreview = DemoTransitionPreview.CurrentMode,
-        indicatorKind = DemoIndicatorKind.Rectangle,
-        indicatorMotion = IndicatorMotion.Slide,
-        rowMotion = TabRowMotion.Smooth,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.None,
-        placement = IndicatorPlacement.BehindContent,
-        indicatorPadding = DemoIndicatorPadding.Small,
+        label = "Segmented", description = "Filled tabs with a rectangular indicator.",
+        theme = DemoTheme.Ocean, contentMode = DemoContentMode.IconText,
+        contentTransition = DemoContentTransition.SlideRight, contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
+        transitionPreview = DemoTransitionPreview.CurrentMode, indicatorKind = DemoIndicatorKind.Rectangle,
+        indicatorMotion = IndicatorMotion.Slide, rowMotion = TabRowMotion.Smooth,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.None,
+        placement = IndicatorPlacement.BehindContent, indicatorPadding = DemoIndicatorPadding.Small,
     ),
     TopLine(
-        label = "Top line",
-        description = "A compact indicator anchored above the row.",
-        theme = DemoTheme.Rose,
-        contentMode = DemoContentMode.IconText,
-        contentTransition = DemoContentTransition.SlideUp,
-        contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
-        transitionPreview = DemoTransitionPreview.IconToIconText,
-        indicatorKind = DemoIndicatorKind.Dash,
-        indicatorMotion = IndicatorMotion.Snake,
-        rowMotion = TabRowMotion.Playful,
-        tabLook = DemoTabLook.Transparent,
-        tabGap = DemoTabGap.Small,
-        placement = IndicatorPlacement.Top,
-        indicatorPadding = DemoIndicatorPadding.Large,
+        label = "Top line", description = "A compact indicator anchored above the row.",
+        theme = DemoTheme.Rose, contentMode = DemoContentMode.IconText,
+        contentTransition = DemoContentTransition.SlideUp, contentSwapPolicy = DemoContentSwapPolicy.Coordinated,
+        transitionPreview = DemoTransitionPreview.IconToIconText, indicatorKind = DemoIndicatorKind.Dash,
+        indicatorMotion = IndicatorMotion.Snake, rowMotion = TabRowMotion.Playful,
+        tabLook = DemoTabLook.Transparent, tabGap = DemoTabGap.Small,
+        placement = IndicatorPlacement.Top, indicatorPadding = DemoIndicatorPadding.Large,
     ),
 }
 
@@ -757,49 +588,23 @@ private enum class DemoTransitionPreview(val label: String) {
     IconTextToIcon("Icon text -> icon"),
     IconToIconText("Icon -> icon text");
 
-    fun resolve(contentMode: DemoContentMode): TabContentConfig {
-        return when (this) {
-            CurrentMode -> contentMode.config
-            TextToIcon -> TabContentConfig.Adaptive(
-                unselected = TabContentStyle.Text,
-                selected = TabContentStyle.Icon,
-            )
-            IconToText -> TabContentConfig.Adaptive(
-                unselected = TabContentStyle.Icon,
-                selected = TabContentStyle.Text,
-            )
-            IconTextToIcon -> TabContentConfig.Adaptive(
-                unselected = TabContentStyle.IconText,
-                selected = TabContentStyle.Icon,
-            )
-            IconToIconText -> TabContentConfig.Adaptive(
-                unselected = TabContentStyle.Icon,
-                selected = TabContentStyle.IconText,
-            )
-        }
+    fun resolve(contentMode: DemoContentMode): TabContentConfig = when (this) {
+        CurrentMode -> contentMode.config
+        TextToIcon -> TabContentConfig.Adaptive(TabContentStyle.Text, TabContentStyle.Icon)
+        IconToText -> TabContentConfig.Adaptive(TabContentStyle.Icon, TabContentStyle.Text)
+        IconTextToIcon -> TabContentConfig.Adaptive(TabContentStyle.IconText, TabContentStyle.Icon)
+        IconToIconText -> TabContentConfig.Adaptive(TabContentStyle.Icon, TabContentStyle.IconText)
     }
 }
 
-private enum class DemoContentMode(
-    val label: String,
-    val config: TabContentConfig,
-) {
+private enum class DemoContentMode(val label: String, val config: TabContentConfig) {
     Text("Text", TabContentConfig.Text),
     Icon("Icon", TabContentConfig.Icon),
     IconText("Icon text", TabContentConfig.IconText),
-    SelectedIcon(
-        "Text -> icon",
-        TabContentConfig.Adaptive(
-            unselected = TabContentStyle.Text,
-            selected = TabContentStyle.Icon,
-        ),
-    ),
+    SelectedIcon("Text -> icon", TabContentConfig.Adaptive(TabContentStyle.Text, TabContentStyle.Icon)),
 }
 
-private enum class DemoContentTransition(
-    val label: String,
-    val transition: TabContentTransition,
-) {
+private enum class DemoContentTransition(val label: String, val transition: TabContentTransition) {
     None("None", TabContentTransition.None),
     Fade("Fade", TabContentTransition.Fade),
     FadeScale("Fade scale", TabContentTransition.FadeScale),
@@ -813,20 +618,14 @@ private enum class DemoContentTransition(
     ExpandFade("Expand fade", TabContentTransition.ExpandFade),
 }
 
-private enum class DemoContentSwapPolicy(
-    val label: String,
-    val policy: TabContentSwapPolicy,
-) {
+private enum class DemoContentSwapPolicy(val label: String, val policy: TabContentSwapPolicy) {
     Coordinated("Coordinated", TabContentSwapPolicy.Coordinated),
     Sequential("Sequential", TabContentSwapPolicy.DeselectThenSelect()),
     Together("Together", TabContentSwapPolicy.Together),
     SlowSequence("Slow sequence", TabContentSwapPolicy.DeselectThenSelect(delayMillis = 220L)),
 }
 
-private enum class DemoIndicatorMotionOption(
-    val label: String,
-    val motion: IndicatorMotion,
-) {
+private enum class DemoIndicatorMotionOption(val label: String, val motion: IndicatorMotion) {
     Slide("Slide", IndicatorMotion.Slide),
     Snake("Snake", IndicatorMotion.Snake),
     Bounce("Bounce", IndicatorMotion.Bounce),
@@ -834,56 +633,35 @@ private enum class DemoIndicatorMotionOption(
     None("None", IndicatorMotion.None);
 
     companion object {
-        fun from(motion: IndicatorMotion): DemoIndicatorMotionOption {
-            return entries.first { it.motion == motion }
-        }
+        fun from(motion: IndicatorMotion) = entries.first { it.motion == motion }
     }
 }
 
-private enum class DemoRowMotionOption(
-    val label: String,
-    val motion: TabRowMotion,
-) {
+private enum class DemoRowMotionOption(val label: String, val motion: TabRowMotion) {
     Smooth("Smooth", TabRowMotion.Smooth),
     Snappy("Snappy", TabRowMotion.Snappy),
     Playful("Playful", TabRowMotion.Playful),
     None("None", TabRowMotion.None);
 
     companion object {
-        fun from(motion: TabRowMotion): DemoRowMotionOption {
-            return entries.firstOrNull { it.motion == motion } ?: Smooth
-        }
+        fun from(motion: TabRowMotion) = entries.firstOrNull { it.motion == motion } ?: Smooth
     }
 }
 
 private enum class DemoIndicatorKind(val label: String) {
-    Pill("Pill"),
-    Rectangle("Rect"),
-    Underline("Line"),
-    Dash("Dash"),
-    Dot("Dot"),
-    Border("Border"),
-    SideRoundedBorder("Side border"),
-    TopBottomBorder("Top/bottom"),
+    Pill("Pill"), Rectangle("Rect"), Underline("Line"), Dash("Dash"),
+    Dot("Dot"), Border("Border"), SideRoundedBorder("Side border"), TopBottomBorder("Top/bottom"),
 }
 
 private val DemoIndicatorKind.hasFilledBackground: Boolean
     get() = this == DemoIndicatorKind.Pill || this == DemoIndicatorKind.Rectangle
 
-private enum class DemoIndicatorPadding(
-    val label: String,
-    val horizontal: androidx.compose.ui.unit.Dp,
-) {
-    None("None", 0.dp),
-    Small("Small", 6.dp),
-    Medium("Medium", 12.dp),
-    Large("Large", 18.dp),
+private enum class DemoIndicatorPadding(val label: String, val horizontal: androidx.compose.ui.unit.Dp) {
+    None("None", 0.dp), Small("Small", 6.dp), Medium("Medium", 12.dp), Large("Large", 18.dp),
 }
 
 private enum class DemoTabLook(val label: String) {
-    Transparent("Flat"),
-    Filled("Filled"),
-    Outlined("Outline"),
+    Transparent("Flat"), Filled("Filled"), Outlined("Outline"),
 }
 
 private enum class DemoTabGap(
@@ -909,80 +687,35 @@ private data class DemoPalette(
     val pageColors: List<Color>,
 )
 
-private fun DemoTheme.palette(): DemoPalette {
-    return when (this) {
-        DemoTheme.Brand -> DemoPalette(
-            background = Color(0xFFFAFBFF),
-            surface = Color.White,
-            content = Color(0xFF172033),
-            muted = Color(0xFF667085),
-            accent = Color(0xFF2D6CDF),
-            onAccent = Color.White,
-            border = Color(0xFFD6DCE8),
-            pageColors = listOf(
-                Color(0xFF2D6CDF),
-                Color(0xFF009688),
-                Color(0xFFE24A68),
-                Color(0xFF7E57C2),
-                Color(0xFF455A64),
-                Color(0xFFEF6C00),
-            ),
-        )
-
-        DemoTheme.Ocean -> DemoPalette(
-            background = Color(0xFFF2FAF9),
-            surface = Color.White,
-            content = Color(0xFF102A2A),
-            muted = Color(0xFF58706F),
-            accent = Color(0xFF00897B),
-            onAccent = Color.White,
-            border = Color(0xFFC8DFDC),
-            pageColors = listOf(
-                Color(0xFF00897B),
-                Color(0xFF039BE5),
-                Color(0xFF43A047),
-                Color(0xFF546E7A),
-                Color(0xFF00695C),
-                Color(0xFF26A69A),
-            ),
-        )
-
-        DemoTheme.Rose -> DemoPalette(
-            background = Color(0xFFFFF7F8),
-            surface = Color.White,
-            content = Color(0xFF331820),
-            muted = Color(0xFF7A5861),
-            accent = Color(0xFFD81B60),
-            onAccent = Color.White,
-            border = Color(0xFFEACDD6),
-            pageColors = listOf(
-                Color(0xFFD81B60),
-                Color(0xFF8E24AA),
-                Color(0xFFE53935),
-                Color(0xFF5E35B1),
-                Color(0xFFC2185B),
-                Color(0xFFAD1457),
-            ),
-        )
-
-        DemoTheme.Mono -> DemoPalette(
-            background = Color(0xFFF7F7F7),
-            surface = Color.White,
-            content = Color(0xFF191919),
-            muted = Color(0xFF666666),
-            accent = Color(0xFF202020),
-            onAccent = Color.White,
-            border = Color(0xFFD5D5D5),
-            pageColors = listOf(
-                Color(0xFF202020),
-                Color(0xFF424242),
-                Color(0xFF616161),
-                Color(0xFF757575),
-                Color(0xFF303030),
-                Color(0xFF555555),
-            ),
-        )
-    }
+private fun DemoTheme.palette(): DemoPalette = when (this) {
+    DemoTheme.Brand -> DemoPalette(
+        background = Color(0xFFFAFBFF), surface = Color.White,
+        content = Color(0xFF172033), muted = Color(0xFF667085),
+        accent = Color(0xFF2D6CDF), onAccent = Color.White,
+        border = Color(0xFFD6DCE8),
+        pageColors = listOf(Color(0xFF2D6CDF), Color(0xFF009688), Color(0xFFE24A68), Color(0xFF7E57C2), Color(0xFF455A64), Color(0xFFEF6C00)),
+    )
+    DemoTheme.Ocean -> DemoPalette(
+        background = Color(0xFFF2FAF9), surface = Color.White,
+        content = Color(0xFF102A2A), muted = Color(0xFF58706F),
+        accent = Color(0xFF00897B), onAccent = Color.White,
+        border = Color(0xFFC8DFDC),
+        pageColors = listOf(Color(0xFF00897B), Color(0xFF039BE5), Color(0xFF43A047), Color(0xFF546E7A), Color(0xFF00695C), Color(0xFF26A69A)),
+    )
+    DemoTheme.Rose -> DemoPalette(
+        background = Color(0xFFFFF7F8), surface = Color.White,
+        content = Color(0xFF331820), muted = Color(0xFF7A5861),
+        accent = Color(0xFFD81B60), onAccent = Color.White,
+        border = Color(0xFFEACDD6),
+        pageColors = listOf(Color(0xFFD81B60), Color(0xFF8E24AA), Color(0xFFE53935), Color(0xFF5E35B1), Color(0xFFC2185B), Color(0xFFAD1457)),
+    )
+    DemoTheme.Mono -> DemoPalette(
+        background = Color(0xFFF7F7F7), surface = Color.White,
+        content = Color(0xFF191919), muted = Color(0xFF666666),
+        accent = Color(0xFF202020), onAccent = Color.White,
+        border = Color(0xFFD5D5D5),
+        pageColors = listOf(Color(0xFF202020), Color(0xFF424242), Color(0xFF616161), Color(0xFF757575), Color(0xFF303030), Color(0xFF555555)),
+    )
 }
 
 private fun DemoIndicatorKind.style(
@@ -990,85 +723,30 @@ private fun DemoIndicatorKind.style(
     borderColor: Color,
     placement: IndicatorPlacement,
     horizontalPadding: androidx.compose.ui.unit.Dp,
-): TabIndicatorStyle {
-    return when (this) {
-        DemoIndicatorKind.Pill -> TabIndicatorStyle.Pill(
-            color = color,
-            placement = placement,
-            horizontalPadding = horizontalPadding,
-        )
-
-        DemoIndicatorKind.Rectangle -> TabIndicatorStyle.Rectangle(
-            color = color,
-            placement = placement,
-            horizontalPadding = horizontalPadding,
-        )
-
-        DemoIndicatorKind.Underline -> TabIndicatorStyle.Underline(
-            color = color,
-            placement = placement,
-            horizontalPadding = horizontalPadding,
-        )
-
-        DemoIndicatorKind.Dash -> TabIndicatorStyle.Dash(
-            color = color,
-            placement = placement,
-            horizontalPadding = horizontalPadding,
-        )
-
-        DemoIndicatorKind.Dot -> TabIndicatorStyle.Dot(
-            color = color,
-            placement = placement,
-        )
-
-        DemoIndicatorKind.Border -> TabIndicatorStyle.Border(
-            border = BorderStroke(1.dp, borderColor),
-            placement = placement,
-            horizontalPadding = horizontalPadding,
-        )
-
-        DemoIndicatorKind.SideRoundedBorder -> TabIndicatorStyle.SideRoundedBorder(
-            border = BorderStroke(1.dp, borderColor),
-            placement = placement,
-            horizontalPadding = horizontalPadding,
-        )
-
-        DemoIndicatorKind.TopBottomBorder -> TabIndicatorStyle.TopBottomBorder(
-            lineColor = borderColor,
-            lineWidth = 1.dp,
-            placement = placement,
-            horizontalPadding = horizontalPadding,
-        )
-    }
+): TabIndicatorStyle = when (this) {
+    DemoIndicatorKind.Pill -> TabIndicatorStyle.Pill(color = color, placement = placement, horizontalPadding = horizontalPadding)
+    DemoIndicatorKind.Rectangle -> TabIndicatorStyle.Rectangle(color = color, placement = placement, horizontalPadding = horizontalPadding)
+    DemoIndicatorKind.Underline -> TabIndicatorStyle.Underline(color = color, placement = placement, horizontalPadding = horizontalPadding)
+    DemoIndicatorKind.Dash -> TabIndicatorStyle.Dash(color = color, placement = placement, horizontalPadding = horizontalPadding)
+    DemoIndicatorKind.Dot -> TabIndicatorStyle.Dot(color = color, placement = placement)
+    DemoIndicatorKind.Border -> TabIndicatorStyle.Border(border = BorderStroke(1.dp, borderColor), placement = placement, horizontalPadding = horizontalPadding)
+    DemoIndicatorKind.SideRoundedBorder -> TabIndicatorStyle.SideRoundedBorder(border = BorderStroke(1.dp, borderColor), placement = placement, horizontalPadding = horizontalPadding)
+    DemoIndicatorKind.TopBottomBorder -> TabIndicatorStyle.TopBottomBorder(lineColor = borderColor, lineWidth = 1.dp, placement = placement, horizontalPadding = horizontalPadding)
 }
 
-private fun DemoTabLook.style(
-    palette: DemoPalette,
-    selectedContentColor: Color,
-    itemSpacing: androidx.compose.ui.unit.Dp,
-    tabHorizontalPadding: androidx.compose.ui.unit.Dp,
-): TabStyle {
-    return when (this) {
-        DemoTabLook.Transparent -> TabStyle.default(
-            selectedContentColor = selectedContentColor,
-            unselectedContentColor = palette.muted,
-        )
-
-        DemoTabLook.Filled -> TabStyle.filled(
-            selectedContentColor = palette.onAccent,
-            unselectedContentColor = palette.muted,
-            selectedContainerColor = palette.accent,
-        )
-
-        DemoTabLook.Outlined -> TabStyle.outlined(
-            selectedContentColor = palette.accent,
-            unselectedContentColor = palette.muted,
-            selectedBorderColor = palette.accent,
-            unselectedBorderColor = palette.border,
-        )
-    }.copy(
-        horizontalPadding = tabHorizontalPadding,
-        itemSpacing = itemSpacing,
+private fun DemoTabLook.colors(palette: DemoPalette, selectedContentColor: Color): TabColors = when (this) {
+    DemoTabLook.Transparent -> TabDefaults.outlinedColors(
+        selectedContentColor = selectedContentColor,
+        unselectedContentColor = palette.muted,
+    )
+    DemoTabLook.Filled -> TabDefaults.filledColors(
+        selectedContentColor = palette.onAccent,
+        unselectedContentColor = palette.muted,
+        selectedContainerColor = palette.accent,
+    )
+    DemoTabLook.Outlined -> TabDefaults.outlinedColors(
+        selectedContentColor = palette.accent,
+        unselectedContentColor = palette.muted,
     )
 }
 
@@ -1080,14 +758,9 @@ private val IndicatorPlacement.label: String
     }
 
 @Composable
-private fun PagerPage(
-    title: String,
-    color: Color,
-) {
+private fun PagerPage(title: String, color: Color) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -1099,14 +772,8 @@ private fun PagerPage(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Canvas(modifier = Modifier.size(12.dp)) {
-                drawCircle(color = color)
-            }
-            Text(
-                text = title,
-                color = color,
-                style = MaterialTheme.typography.titleLarge,
-            )
+            Canvas(modifier = Modifier.size(12.dp)) { drawCircle(color = color) }
+            Text(text = title, color = color, style = MaterialTheme.typography.titleLarge)
         }
     }
 }
@@ -1114,136 +781,61 @@ private fun PagerPage(
 @Preview(showBackground = true)
 @Composable
 fun TabRowDemoPreview() {
-    TabRowTheme {
-        TabRowDemo()
-    }
+    TabRowTheme { TabRowDemo() }
 }
 
 private object DemoIcons {
     val Home = simpleIcon("Home") {
         path(fill = androidx.compose.ui.graphics.SolidColor(Color.Black)) {
-            moveTo(12f, 3f)
-            lineTo(3f, 10f)
-            lineTo(5f, 10f)
-            lineTo(5f, 20f)
-            lineTo(10f, 20f)
-            lineTo(10f, 14f)
-            lineTo(14f, 14f)
-            lineTo(14f, 20f)
-            lineTo(19f, 20f)
-            lineTo(19f, 10f)
-            lineTo(21f, 10f)
-            close()
+            moveTo(12f, 3f); lineTo(3f, 10f); lineTo(5f, 10f); lineTo(5f, 20f)
+            lineTo(10f, 20f); lineTo(10f, 14f); lineTo(14f, 14f); lineTo(14f, 20f)
+            lineTo(19f, 20f); lineTo(19f, 10f); lineTo(21f, 10f); close()
         }
     }
-
     val Search = simpleIcon("Search") {
         path(fill = androidx.compose.ui.graphics.SolidColor(Color.Black)) {
-            moveTo(10f, 4f)
-            lineTo(15f, 7f)
-            lineTo(15f, 13f)
-            lineTo(10f, 16f)
-            lineTo(5f, 13f)
-            lineTo(5f, 7f)
-            close()
-            moveTo(14f, 14f)
-            lineTo(20f, 20f)
-            lineTo(18.5f, 21.5f)
-            lineTo(12.5f, 15.5f)
-            close()
+            moveTo(10f, 4f); lineTo(15f, 7f); lineTo(15f, 13f); lineTo(10f, 16f)
+            lineTo(5f, 13f); lineTo(5f, 7f); close()
+            moveTo(14f, 14f); lineTo(20f, 20f); lineTo(18.5f, 21.5f); lineTo(12.5f, 15.5f); close()
         }
     }
-
     val Grid = simpleIcon("Grid") {
         path(fill = androidx.compose.ui.graphics.SolidColor(Color.Black)) {
-            moveTo(4f, 4f)
-            lineTo(10f, 4f)
-            lineTo(10f, 10f)
-            lineTo(4f, 10f)
-            close()
-            moveTo(14f, 4f)
-            lineTo(20f, 4f)
-            lineTo(20f, 10f)
-            lineTo(14f, 10f)
-            close()
-            moveTo(4f, 14f)
-            lineTo(10f, 14f)
-            lineTo(10f, 20f)
-            lineTo(4f, 20f)
-            close()
-            moveTo(14f, 14f)
-            lineTo(20f, 14f)
-            lineTo(20f, 20f)
-            lineTo(14f, 20f)
-            close()
+            moveTo(4f, 4f); lineTo(10f, 4f); lineTo(10f, 10f); lineTo(4f, 10f); close()
+            moveTo(14f, 4f); lineTo(20f, 4f); lineTo(20f, 10f); lineTo(14f, 10f); close()
+            moveTo(4f, 14f); lineTo(10f, 14f); lineTo(10f, 20f); lineTo(4f, 20f); close()
+            moveTo(14f, 14f); lineTo(20f, 14f); lineTo(20f, 20f); lineTo(14f, 20f); close()
         }
     }
-
     val Heart = simpleIcon("Heart") {
         path(fill = androidx.compose.ui.graphics.SolidColor(Color.Black)) {
             moveTo(12f, 21f)
-            curveTo(7f, 17f, 4f, 14f, 4f, 9f)
-            curveTo(4f, 6f, 6f, 4f, 9f, 4f)
-            curveTo(10.5f, 4f, 11.5f, 5f, 12f, 6f)
-            curveTo(12.5f, 5f, 13.5f, 4f, 15f, 4f)
-            curveTo(18f, 4f, 20f, 6f, 20f, 9f)
-            curveTo(20f, 14f, 17f, 17f, 12f, 21f)
-            close()
+            curveTo(7f, 17f, 4f, 14f, 4f, 9f); curveTo(4f, 6f, 6f, 4f, 9f, 4f)
+            curveTo(10.5f, 4f, 11.5f, 5f, 12f, 6f); curveTo(12.5f, 5f, 13.5f, 4f, 15f, 4f)
+            curveTo(18f, 4f, 20f, 6f, 20f, 9f); curveTo(20f, 14f, 17f, 17f, 12f, 21f); close()
         }
     }
-
     val User = simpleIcon("User") {
         path(fill = androidx.compose.ui.graphics.SolidColor(Color.Black)) {
-            moveTo(12f, 4f)
-            lineTo(16f, 8f)
-            lineTo(14f, 13f)
-            lineTo(10f, 13f)
-            lineTo(8f, 8f)
-            close()
-            moveTo(5f, 21f)
-            curveTo(6f, 16f, 8.5f, 14f, 12f, 14f)
-            curveTo(15.5f, 14f, 18f, 16f, 19f, 21f)
-            close()
+            moveTo(12f, 4f); lineTo(16f, 8f); lineTo(14f, 13f); lineTo(10f, 13f); lineTo(8f, 8f); close()
+            moveTo(5f, 21f); curveTo(6f, 16f, 8.5f, 14f, 12f, 14f); curveTo(15.5f, 14f, 18f, 16f, 19f, 21f); close()
         }
     }
-
     val Settings = simpleIcon("Settings") {
         path(fill = androidx.compose.ui.graphics.SolidColor(Color.Black)) {
-            moveTo(12f, 2f)
-            lineTo(14f, 5f)
-            lineTo(18f, 5f)
-            lineTo(17f, 9f)
-            lineTo(20f, 12f)
-            lineTo(17f, 15f)
-            lineTo(18f, 19f)
-            lineTo(14f, 19f)
-            lineTo(12f, 22f)
-            lineTo(10f, 19f)
-            lineTo(6f, 19f)
-            lineTo(7f, 15f)
-            lineTo(4f, 12f)
-            lineTo(7f, 9f)
-            lineTo(6f, 5f)
-            lineTo(10f, 5f)
-            close()
-            moveTo(10f, 10f)
-            lineTo(14f, 10f)
-            lineTo(14f, 14f)
-            lineTo(10f, 14f)
-            close()
+            moveTo(12f, 2f); lineTo(14f, 5f); lineTo(18f, 5f); lineTo(17f, 9f); lineTo(20f, 12f)
+            lineTo(17f, 15f); lineTo(18f, 19f); lineTo(14f, 19f); lineTo(12f, 22f); lineTo(10f, 19f)
+            lineTo(6f, 19f); lineTo(7f, 15f); lineTo(4f, 12f); lineTo(7f, 9f); lineTo(6f, 5f); lineTo(10f, 5f); close()
+            moveTo(10f, 10f); lineTo(14f, 10f); lineTo(14f, 14f); lineTo(10f, 14f); close()
         }
     }
 }
 
-private fun simpleIcon(
-    name: String,
-    block: ImageVector.Builder.() -> Unit,
-): ImageVector {
-    return ImageVector.Builder(
+private fun simpleIcon(name: String, block: ImageVector.Builder.() -> Unit): ImageVector =
+    ImageVector.Builder(
         name = name,
         defaultWidth = 24.dp,
         defaultHeight = 24.dp,
         viewportWidth = 24f,
         viewportHeight = 24f,
     ).apply(block).build()
-}
