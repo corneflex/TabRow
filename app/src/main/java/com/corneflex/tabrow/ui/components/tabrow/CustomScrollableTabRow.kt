@@ -1,5 +1,8 @@
 package com.corneflex.tabrow.ui.components.tabrow
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.animate
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -173,7 +176,12 @@ fun CustomScrollableTabRow(
                     },
                     onClick = {
                         if (onTabClick != null) onTabClick(index)
-                        else scope.launch { pagerState.animateScrollToPage(index) }
+                        else scope.launch {
+                            pagerState.animateScrollToPageSmoothly(
+                                page = index,
+                                animationSpec = motion.scrollSpec,
+                            )
+                        }
                     },
                 )
                 if (index != tabs.lastIndex) {
@@ -207,4 +215,32 @@ private fun coordinatedFraction(
 ): Float? {
     if (policy != TabContentSwapPolicy.Coordinated || !content.hasAdaptiveContent()) return null
     return (1f - abs(index - pageProgress)).coerceIn(0f, 1f)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private suspend fun PagerState.animateScrollToPageSmoothly(
+    page: Int,
+    animationSpec: AnimationSpec<Float>,
+) {
+    if (pageCount == 0) return
+
+    val targetPage = page.coerceIn(0, pageCount - 1)
+    if (targetPage == currentPage && currentPageOffsetFraction == 0f) return
+
+    val pageSizeWithSpacing = layoutInfo.pageSize + layoutInfo.pageSpacing
+    if (pageSizeWithSpacing == 0) {
+        scrollToPage(targetPage)
+        return
+    }
+
+    scroll {
+        updateTargetPage(targetPage)
+        val displacement = getOffsetDistanceInPages(targetPage) * pageSizeWithSpacing
+        var previousValue = 0f
+
+        animate(0f, displacement, animationSpec = animationSpec) { currentValue, _ ->
+            val consumed = scrollBy(currentValue - previousValue)
+            previousValue += consumed
+        }
+    }
 }
