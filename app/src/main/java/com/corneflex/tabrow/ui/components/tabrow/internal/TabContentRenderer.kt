@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.corneflex.tabrow.ui.components.tabrow.config.TabContentOptions
 import com.corneflex.tabrow.ui.components.tabrow.config.TabContentStyle
 import com.corneflex.tabrow.ui.components.tabrow.model.TabItem
@@ -43,18 +42,18 @@ internal fun TabContent(
                 tint = contentColor,
                 modifier = Modifier
                     .padding(horizontal = options.iconOnlyHorizontalPadding)
-                    .size(20.dp),
+                    .size(options.iconSize),
             )
         }
         TabContentStyle.Image -> item.image?.let {
             Image(
                 painter = it,
                 contentDescription = item.contentDescription,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(options.imageSize),
             )
         }
-        TabContentStyle.IconText -> IconTextContent(item, contentColor, textStyle)
-        TabContentStyle.ImageText -> ImageTextContent(item, contentColor, textStyle)
+        TabContentStyle.IconText -> IconTextContent(item, contentColor, textStyle, options)
+        TabContentStyle.ImageText -> ImageTextContent(item, contentColor, textStyle, options)
     }
 }
 
@@ -63,9 +62,10 @@ private fun IconTextContent(
     item: TabItem,
     contentColor: Color,
     textStyle: TextStyle,
+    options: TabContentOptions,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(options.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         item.icon?.let {
@@ -73,7 +73,7 @@ private fun IconTextContent(
                 imageVector = it,
                 contentDescription = item.contentDescription,
                 tint = contentColor,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(options.iconSize),
             )
         }
         item.text?.let {
@@ -93,16 +93,17 @@ private fun ImageTextContent(
     item: TabItem,
     contentColor: Color,
     textStyle: TextStyle,
+    options: TabContentOptions,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(options.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         item.image?.let {
             Image(
                 painter = it,
                 contentDescription = item.contentDescription,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(options.imageSize),
             )
         }
         item.text?.let {

@@ -37,7 +37,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
+import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorMotion
 import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorPlacement
 import com.corneflex.tabrow.ui.components.tabrow.config.TabContentConfig
 import com.corneflex.tabrow.ui.components.tabrow.config.TabContentOptions
@@ -45,6 +45,7 @@ import com.corneflex.tabrow.ui.components.tabrow.config.TabContentStyle
 import com.corneflex.tabrow.ui.components.tabrow.config.TabContentTransition
 import com.corneflex.tabrow.ui.components.tabrow.config.TabIndicatorConfig
 import com.corneflex.tabrow.ui.components.tabrow.config.TabIndicatorStyle
+import com.corneflex.tabrow.ui.components.tabrow.config.TabRowMotion
 import com.corneflex.tabrow.ui.components.tabrow.config.contentTransform
 import com.corneflex.tabrow.ui.components.tabrow.config.layerVisual
 import com.corneflex.tabrow.ui.components.tabrow.config.styleFor
@@ -59,7 +60,7 @@ internal fun BoxScope.IndicatorLayer(
     progress: Float,
     tabPositions: Map<Int, TabMeasurement>,
     indicator: TabIndicatorConfig,
-    motion: com.corneflex.tabrow.ui.components.tabrow.config.IndicatorMotion,
+    motion: IndicatorMotion,
 ) {
     val density = LocalDensity.current
     val position = indicatorPosition(
@@ -104,7 +105,7 @@ internal fun CustomTab(
     indicatorStyle: TabIndicatorStyle,
     colors: TabColors,
     style: TabStyle,
-    motion: com.corneflex.tabrow.ui.components.tabrow.config.TabRowMotion,
+    motion: TabRowMotion,
     modifier: Modifier = Modifier,
     onPositioned: (LayoutCoordinates) -> Unit,
     onClick: () -> Unit,
@@ -150,7 +151,7 @@ internal fun CustomTab(
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = style.horizontalPadding, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = style.horizontalPadding, vertical = style.verticalPadding),
             contentAlignment = Alignment.Center,
         ) {
             if (selectionFraction != null && content is TabContentConfig.Adaptive) {

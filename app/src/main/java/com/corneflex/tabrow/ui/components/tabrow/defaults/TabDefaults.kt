@@ -84,7 +84,9 @@ object TabDefaults {
         unselectedBorder: BorderStroke? = null,
         minHeight: Dp = 44.dp,
         horizontalPadding: Dp = 16.dp,
+        verticalPadding: Dp = 10.dp,
         itemSpacing: Dp = 8.dp,
+        edgePadding: Dp = 8.dp,
     ) = TabStyle(
         shape = shape,
         selectedTextStyle = selectedTextStyle,
@@ -93,7 +95,9 @@ object TabDefaults {
         unselectedBorder = unselectedBorder,
         minHeight = minHeight,
         horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
         itemSpacing = itemSpacing,
+        edgePadding = edgePadding,
     )
 
     /** Style preset for tabs with an explicit border around each item. */
@@ -104,14 +108,18 @@ object TabDefaults {
         borderWidth: Dp = 1.dp,
         minHeight: Dp = 44.dp,
         horizontalPadding: Dp = 16.dp,
+        verticalPadding: Dp = 10.dp,
         itemSpacing: Dp = 8.dp,
+        edgePadding: Dp = 8.dp,
     ) = TabStyle(
         shape = shape,
         selectedBorder = BorderStroke(borderWidth, selectedBorderColor),
         unselectedBorder = BorderStroke(borderWidth, unselectedBorderColor),
         minHeight = minHeight,
         horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
         itemSpacing = itemSpacing,
+        edgePadding = edgePadding,
     )
 
     // ─── Content options ──────────────────────────────────────────────────────
@@ -120,10 +128,16 @@ object TabDefaults {
         transition: TabContentTransition = TabContentTransition.FadeScale,
         swapPolicy: TabContentSwapPolicy = TabContentSwapPolicy.Coordinated,
         iconOnlyHorizontalPadding: Dp = 8.dp,
+        iconSize: Dp = 20.dp,
+        imageSize: Dp = 24.dp,
+        contentSpacing: Dp = 8.dp,
     ) = TabContentOptions(
         transition = transition,
         swapPolicy = swapPolicy,
         iconOnlyHorizontalPadding = iconOnlyHorizontalPadding,
+        iconSize = iconSize,
+        imageSize = imageSize,
+        contentSpacing = contentSpacing,
     )
 
     // ─── Indicator ────────────────────────────────────────────────────────────

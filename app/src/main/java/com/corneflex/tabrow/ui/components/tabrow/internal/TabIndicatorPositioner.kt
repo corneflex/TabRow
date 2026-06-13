@@ -1,7 +1,9 @@
 package com.corneflex.tabrow.ui.components.tabrow.internal
 
 import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorMotion
+import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorMotionScope
 import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorMotionSpec
+import com.corneflex.tabrow.ui.components.tabrow.config.IndicatorTransform
 import com.corneflex.tabrow.ui.components.tabrow.config.TabIndicatorStyle
 import kotlin.math.PI
 import kotlin.math.abs
@@ -43,32 +45,39 @@ internal fun indicatorPosition(
     val fromBounds = from.indicatorBounds(horizontalPaddingPx, minWidthPx)
     val toBounds = to.indicatorBounds(horizontalPaddingPx, minWidthPx)
 
-    val (left, right) = when (motion) {
-        IndicatorMotion.Snake -> snakeBounds(
-            fromBounds.left, fromBounds.right,
-            toBounds.left, toBounds.right,
-            fraction,
+    val scope = IndicatorMotionScope(
+        fromLeft = fromBounds.left,
+        fromRight = fromBounds.right,
+        toLeft = toBounds.left,
+        toRight = toBounds.right,
+        fraction = fraction,
+    )
+    val transform = when (motion) {
+        is IndicatorMotion.Custom -> motion.transform(scope)
+        IndicatorMotion.Snake -> {
+            val (left, right) = snakeBounds(scope.fromLeft, scope.fromRight, scope.toLeft, scope.toRight, fraction)
+            IndicatorTransform(left = left, right = right)
+        }
+        else -> IndicatorTransform(
+            left = lerp(scope.fromLeft, scope.toLeft, fraction),
+            right = lerp(scope.fromRight, scope.toRight, fraction),
+            scale = if (motion == IndicatorMotion.Bounce) {
+                1f + sin(fraction * PI).toFloat() * (motionSpec.bounceScale - 1f)
+            } else 1f,
+            alpha = if (motion == IndicatorMotion.Fade) {
+                motionSpec.fadeMinAlpha + abs(fraction - 0.5f) * (2f * (1f - motionSpec.fadeMinAlpha))
+            } else 1f,
         )
-        else -> lerp(fromBounds.left, toBounds.left, fraction) to
-            lerp(fromBounds.right, toBounds.right, fraction)
     }
 
-    val scale = if (motion == IndicatorMotion.Bounce) {
-        1f + sin(fraction * PI).toFloat() * (motionSpec.bounceScale - 1f)
-    } else 1f
-
-    val alpha = if (motion == IndicatorMotion.Fade) {
-        motionSpec.fadeMinAlpha + abs(fraction - 0.5f) * (2f * (1f - motionSpec.fadeMinAlpha))
-    } else 1f
-
     val isDot = style is TabIndicatorStyle.Dot
-    val width = if (isDot) dotSizePx else (right - left).coerceAtLeast(0f)
+    val width = if (isDot) dotSizePx else (transform.right - transform.left).coerceAtLeast(0f)
 
     return IndicatorPosition(
-        left = if (isDot) lerp(from.center, to.center, fraction) - width / 2f else left,
+        left = if (isDot) lerp(from.center, to.center, fraction) - width / 2f else transform.left,
         width = width,
-        scale = scale,
-        alpha = alpha.coerceIn(0f, 1f),
+        scale = transform.scale,
+        alpha = transform.alpha.coerceIn(0f, 1f),
     )
 }
 

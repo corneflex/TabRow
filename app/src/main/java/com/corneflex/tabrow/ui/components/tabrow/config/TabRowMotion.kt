@@ -8,13 +8,57 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.unit.IntSize
 
+/**
+ * How the selection indicator travels between tabs.
+ *
+ * Built-in presets cover the common cases. For anything else, use [Custom] to
+ * compute the indicator geometry yourself — this is the extension point that
+ * mirrors [TabContentTransition.Custom] and [TabRowMotion.Custom].
+ */
 sealed interface IndicatorMotion {
     data object Slide : IndicatorMotion
     data object Snake : IndicatorMotion
     data object Bounce : IndicatorMotion
     data object Fade : IndicatorMotion
     data object None : IndicatorMotion
+
+    /**
+     * Fully custom motion. Receives the start/end geometry of the indicator and
+     * the transition [fraction][IndicatorMotionScope.fraction], and returns the
+     * interpolated geometry for the current frame.
+     *
+     * ```kotlin
+     * // Indicator that leads with a slight overshoot
+     * IndicatorMotion.Custom { s ->
+     *     val eased = 1f - (1f - s.fraction).pow(3)
+     *     IndicatorTransform(
+     *         left = s.fromLeft + (s.toLeft - s.fromLeft) * eased,
+     *         right = s.fromRight + (s.toRight - s.fromRight) * eased,
+     *     )
+     * }
+     * ```
+     */
+    data class Custom(
+        val transform: (scope: IndicatorMotionScope) -> IndicatorTransform,
+    ) : IndicatorMotion
 }
+
+/** Start/end indicator geometry (in pixels) and the `[0, 1]` transition fraction. */
+data class IndicatorMotionScope(
+    val fromLeft: Float,
+    val fromRight: Float,
+    val toLeft: Float,
+    val toRight: Float,
+    val fraction: Float,
+)
+
+/** Interpolated indicator geometry for one frame, produced by an [IndicatorMotion]. */
+data class IndicatorTransform(
+    val left: Float,
+    val right: Float,
+    val scale: Float = 1f,
+    val alpha: Float = 1f,
+)
 
 sealed class TabRowMotion(
     internal val indicatorMotion: IndicatorMotion,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -101,8 +102,9 @@ fun CustomScrollableTabRow(
             .horizontalScroll(scrollState),
     ) {
         val indicatorMotion = indicator.motion ?: motion.indicatorMotion
-        val indicatorProgress by rememberIndicatorProgress(pagerState, tabs.size, indicatorMotion)
-        val pageProgress by rememberPageProgress(pagerState, tabs.size)
+        val pagerProgress by rememberPagerProgress(pagerState, tabs.size)
+        val indicatorProgress =
+            if (indicatorMotion == IndicatorMotion.None) pagerState.currentPage.toFloat() else pagerProgress
 
         LaunchedEffect(selectedIndex, content, contentOptions.swapPolicy) {
             if (!content.hasAdaptiveContent()) {
@@ -143,11 +145,11 @@ fun CustomScrollableTabRow(
             modifier = Modifier.padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(style.edgePadding))
             tabs.forEachIndexed { index, tab ->
                 val selectionFraction = coordinatedFraction(
                     index = index,
-                    pageProgress = pageProgress,
+                    pageProgress = pagerProgress,
                     content = content,
                     policy = contentOptions.swapPolicy,
                 )
@@ -178,37 +180,19 @@ fun CustomScrollableTabRow(
                     Spacer(modifier = Modifier.width(style.itemSpacing))
                 }
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(style.edgePadding))
         }
     }
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
+/** Continuous `[0, tabCount - 1]` position of the pager, tracking page + swipe offset. */
 @Composable
-private fun rememberIndicatorProgress(
+private fun rememberPagerProgress(
     pagerState: PagerState,
     tabCount: Int,
-    motion: IndicatorMotion,
-): androidx.compose.runtime.State<Float> {
-    val raw by remember {
-        derivedStateOf {
-            (pagerState.currentPage + pagerState.currentPageOffsetFraction)
-                .coerceIn(0f, (tabCount - 1).coerceAtLeast(0).toFloat())
-        }
-    }
-    return if (motion == IndicatorMotion.None) {
-        remember { derivedStateOf { pagerState.currentPage.toFloat() } }
-    } else {
-        remember { derivedStateOf { raw } }
-    }
-}
-
-@Composable
-private fun rememberPageProgress(
-    pagerState: PagerState,
-    tabCount: Int,
-): androidx.compose.runtime.State<Float> = remember {
+): State<Float> = remember(pagerState, tabCount) {
     derivedStateOf {
         (pagerState.currentPage + pagerState.currentPageOffsetFraction)
             .coerceIn(0f, (tabCount - 1).coerceAtLeast(0).toFloat())

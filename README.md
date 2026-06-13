@@ -24,6 +24,7 @@ A fully customisable scrollable tab row for Jetpack Compose, driven by a `PagerS
 7. [Extending the library](#extending-the-library)
    - [Custom indicator style](#custom-indicator-style)
    - [Custom content transition](#custom-content-transition)
+   - [Custom indicator motion](#custom-indicator-motion)
    - [Custom row motion](#custom-row-motion)
 8. [Build & run](#build--run)
 
@@ -150,8 +151,10 @@ style = TabDefaults.style(
     selectedTextStyle = MaterialTheme.typography.labelLarge,
     unselectedTextStyle = MaterialTheme.typography.labelMedium,
     minHeight = 40.dp,
-    horizontalPadding = 16.dp,
-    itemSpacing = 4.dp,
+    horizontalPadding = 16.dp,   // inner padding, left/right of content
+    verticalPadding = 10.dp,     // inner padding, above/below content
+    itemSpacing = 4.dp,          // gap between adjacent tabs
+    edgePadding = 8.dp,          // leading/trailing inset of the whole row
 )
 
 // Outlined tabs (border around each item)
@@ -203,7 +206,10 @@ Groups content animation settings.
 contentOptions = TabContentOptions(
     transition = TabContentTransition.FadeScale,   // AnimatedContent transition
     swapPolicy = TabContentSwapPolicy.Coordinated, // when content swaps
-    iconOnlyHorizontalPadding = 8.dp,
+    iconOnlyHorizontalPadding = 8.dp,              // extra padding around icon-only tabs
+    iconSize = 20.dp,                              // icon size (icon-only & icon + text)
+    imageSize = 24.dp,                             // image size (image-only & image + text)
+    contentSpacing = 8.dp,                         // gap between icon/image and text
 )
 ```
 
@@ -290,6 +296,7 @@ TabIndicatorStyle.Pill(
 | `Bounce` | scale pulse at mid-transition |
 | `Fade` | alpha dip at mid-transition |
 | `None` | instant jump |
+| `Custom { … }` | compute the indicator geometry yourself — see [Custom indicator motion](#custom-indicator-motion) |
 
 **Copy helpers:**
 
@@ -452,10 +459,10 @@ tabrow/
 ```
 PagerState.currentPage + currentPageOffsetFraction
         │
-        ├─► rememberIndicatorProgress ─► IndicatorLayer (position interpolation)
-        │
-        └─► rememberPageProgress ──────► coordinatedFraction ─► CoordinatedTabContent
-                                                                  (alpha/scale/offset per layer)
+        └─► rememberPagerProgress ─┬─► IndicatorLayer (position interpolation)
+                                   │
+                                   └─► coordinatedFraction ─► CoordinatedTabContent
+                                                               (alpha/scale/offset per layer)
 ```
 
 Tab positions are tracked via `Modifier.onGloballyPositioned` into a `mutableStateMapOf<Int, TabMeasurement>`. The indicator positioner interpolates between neighbouring measurements based on the fractional pager progress.
@@ -530,6 +537,41 @@ class SlideUpFadeTransition : TabContentTransition.Custom(
 | `scale` | uniform scale (1f = no scale) |
 | `offsetXFactor` | horizontal shift as a fraction of the tab width |
 | `offsetYFactor` | vertical shift as a fraction of the tab height |
+
+### Custom indicator motion
+
+The four presets (`Slide`, `Snake`, `Bounce`, `Fade`) cover the common cases, but the way the indicator travels between tabs is fully open via `IndicatorMotion.Custom`. You receive the start/end geometry plus the `[0, 1]` transition fraction and return the interpolated geometry for the current frame:
+
+```kotlin
+indicator = TabDefaults.indicator(
+    motion = IndicatorMotion.Custom { s ->
+        // Ease-out cubic — the indicator leads, then settles
+        val eased = 1f - (1f - s.fraction).pow(3)
+        IndicatorTransform(
+            left  = s.fromLeft  + (s.toLeft  - s.fromLeft)  * eased,
+            right = s.fromRight + (s.toRight - s.fromRight) * eased,
+        )
+    },
+)
+```
+
+`IndicatorMotionScope` (the receiver `s`) carries the pixel geometry of the transition:
+
+| Property | Meaning |
+|---|---|
+| `fromLeft` / `fromRight` | indicator edges over the **departing** tab |
+| `toLeft` / `toRight` | indicator edges over the **arriving** tab |
+| `fraction` | `0f` at the start of the swipe, `1f` when settled |
+
+`IndicatorTransform` is what you return for each frame:
+
+| Property | Effect |
+|---|---|
+| `left` / `right` | indicator edges in pixels |
+| `scale` | uniform scale (1f = none) — used by `Bounce` |
+| `alpha` | opacity (1f = opaque) — used by `Fade` |
+
+> For `Dot` indicators the width is fixed to the dot size and the position follows the tab centers, so `left`/`right` are ignored — `scale` and `alpha` still apply.
 
 ### Custom row motion
 

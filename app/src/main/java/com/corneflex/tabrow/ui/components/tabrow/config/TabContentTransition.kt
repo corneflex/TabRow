@@ -20,6 +20,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.lerp
 
 // ─── Layer visual ─────────────────────────────────────────────────────────────
 
@@ -162,6 +163,3 @@ internal fun TabContentTransition.layerVisual(progress: Float, entering: Boolean
         else -> ContentLayerVisual(alpha = p) // Custom handled above via early return
     }
 }
-
-private fun lerp(start: Float, stop: Float, fraction: Float): Float =
-    start + (stop - start) * fraction.coerceIn(0f, 1f)

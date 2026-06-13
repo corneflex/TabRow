@@ -40,16 +40,22 @@ sealed class TabContentSwapPolicy {
 }
 
 /**
- * Groups all content-animation options so the main composable parameter list stays short.
+ * Groups all content-rendering options so the main composable parameter list stays short.
  *
  * @param transition How content animates when the active tab changes.
  * @param swapPolicy When selected/unselected content is swapped.
  * @param iconOnlyHorizontalPadding Extra horizontal padding around icon-only tabs.
+ * @param iconSize Size of icons (icon-only and icon + text).
+ * @param imageSize Size of images (image-only and image + text).
+ * @param contentSpacing Gap between icon/image and text in combined content.
  */
 data class TabContentOptions(
     val transition: TabContentTransition = TabContentTransition.FadeScale,
     val swapPolicy: TabContentSwapPolicy = TabContentSwapPolicy.Coordinated,
     val iconOnlyHorizontalPadding: Dp = 8.dp,
+    val iconSize: Dp = 20.dp,
+    val imageSize: Dp = 24.dp,
+    val contentSpacing: Dp = 8.dp,
 )
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────

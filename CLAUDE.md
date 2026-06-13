@@ -24,20 +24,39 @@ Single-module Android app (Kotlin + Jetpack Compose) used as a playground for `C
 
 **Entry point:** `MainActivity.kt` — hosts a `HorizontalPager` and an interactive playground for configuring the tab row.
 
-### Public API — `ui/components/tabrow/`
+The `ui/components/tabrow/` package is split into four subpackages. Kotlin `internal` visibility is module-scoped, so the `internal/` package stays hidden from consumers while still being reachable across subpackages.
+
+### `tabrow/` (root) — public entry point
 
 | File | Purpose |
 |---|---|
 | `CustomScrollableTabRow.kt` | Main composable — slim orchestrator (~120 lines) |
-| `TabDefaults.kt` | Factory object: `colors()`, `style()`, `contentOptions()`, `indicator()`, `pillIndicator()`, etc. |
-| `TabColors.kt` | Selected/unselected content and container colors |
-| `TabStyle.kt` | Shape, text styles, borders, sizing, and item spacing |
-| `TabContentConfig.kt` | What to render (`TabContentConfig`), how to animate it (`TabContentTransition`, `TabContentSwapPolicy`), and sizing (`TabContentOptions`) |
-| `TabIndicatorConfig.kt` | Indicator shape variants (`TabIndicatorStyle`), placement, and motion |
-| `TabRowMotion.kt` | Row-wide animation presets (`Smooth`, `Snappy`, `Playful`, `None`, `Custom`) |
-| `TabItem.kt` | Data model: text, icon, image, contentDescription |
 
-### Internal implementation — same package
+### `model/` — pure data, no Compose animation deps
+
+| File | Purpose |
+|---|---|
+| `TabItem.kt` | Data model: text, icon, image, contentDescription |
+| `TabColors.kt` | Selected/unselected content and container colors |
+| `TabStyle.kt` | Shape, text styles, borders, sizing, and padding (`horizontalPadding`, `verticalPadding`, `itemSpacing`, `edgePadding`) |
+
+### `config/` — behavior & animation configuration
+
+| File | Purpose |
+|---|---|
+| `TabContentConfig.kt` | What to render (`TabContentConfig`), swap policy (`TabContentSwapPolicy`), and sizing (`TabContentOptions`) |
+| `TabContentTransition.kt` | `AnimatedContent` transitions + `ContentLayerVisual` for coordinated cross-fades; `Custom` open class |
+| `TabIndicatorConfig.kt` | Indicator shape variants (`TabIndicatorStyle`), placement, motion spec |
+| `TabRowMotion.kt` | Row-wide presets (`Smooth`, `Snappy`, `Playful`, `None`, `Custom`); `IndicatorMotion` (+ `Custom`), `IndicatorMotionScope`, `IndicatorTransform` |
+
+### `defaults/` — public factory & fluent API
+
+| File | Purpose |
+|---|---|
+| `TabDefaults.kt` | Factory object: `colors()`, `style()`, `contentOptions()`, `indicator()`, `pillIndicator()`, etc. |
+| `TabRowExtensions.kt` | Copy-helper extensions (`withMotion`, `withShape`, `toTabItems`, …) |
+
+### `internal/` — implementation details (not public API)
 
 | File | Responsibility |
 |---|---|
@@ -49,10 +68,10 @@ Single-module Android app (Kotlin + Jetpack Compose) used as a playground for `C
 ### Key design points
 
 - `TabColors` + `TabStyle` replace the old single `TabStyle` class — mirroring the Material3 `ButtonColors` / `ButtonDefaults` pattern.
-- `TabContentOptions` groups `transition`, `swapPolicy`, and `iconOnlyHorizontalPadding` so the composable parameter list stays short.
-- `TabDefaults` is the single entry point for all configuration — users can start with defaults and override only what they need.
-- The indicator position is computed by interpolating `TabMeasurement` entries (tracked via `Modifier.onGloballyPositioned`) using `pagerState.currentPageOffsetFraction`.
-- `TabContentTransition.Custom` and `TabRowMotion.Custom` accept arbitrary animation specs for full extensibility.
+- `TabContentOptions` groups `transition`, `swapPolicy`, and icon/image sizing so the composable parameter list stays short.
+- `TabDefaults` is the single entry point for all configuration — users can start with defaults and override only what they need. Keep its factory params in sync with the `model`/`config` data classes.
+- The indicator position is computed by interpolating `TabMeasurement` entries (tracked via `Modifier.onGloballyPositioned`) using `pagerState.currentPageOffsetFraction`. A single `rememberPagerProgress` drives both the indicator and coordinated content.
+- **Three `Custom` extension points** for full extensibility: `TabContentTransition.Custom` (content animation), `IndicatorMotion.Custom` (indicator travel — returns an `IndicatorTransform` per frame from an `IndicatorMotionScope`), and `TabRowMotion.Custom` (row-wide specs).
 - New indicator shapes: subclass `TabIndicatorStyle` as a `data class` and implement `shape`, `color`, `border`, `placement`, `horizontalPadding`, and `height`.
 
 ### Minimal usage
